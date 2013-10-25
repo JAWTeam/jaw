@@ -1,0 +1,414 @@
+<?php
+/**
+ * @file        jaw.install
+ * @description Joy At Work main module
+ *
+ * PHP Version  5.3
+ *
+ * @package Joy At Work
+ * @category
+ * @plugin URI
+ * @copyright   2013, Vadim Pshentsov. All Rights Reserved.
+ * @license     http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
+ * @author      Vadim Pshentsov <pshentsoff@gmail.com>
+ * @created     14.09.13
+ */
+
+/**
+ * hook_schema() implementation
+ * @return mixed - schema
+ */
+function jaw_schema() {
+
+  $schema['jaw_users'] = array(
+    'description' => t('Joy At Work users and customers data'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Primary key: J@W user ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t("User's {users}.id."),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => t('The Unix timestamp when client created.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' =>
+        t('The Unix timestamp when client was recently changed.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'udid' => array(
+        'description' => t('{ce_userdata}.id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+
+    ),
+
+    'primary key' => array('id'),
+
+    'foreign keys' => array(
+      'users' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+      'userdata' => array(
+        'table' => 'ce_userdata',
+        'columns' => array(
+          'udid' => 'id',
+        ),
+      ),
+    ),
+  );
+
+  $schema['jaw_task_states'] = array(
+    'description' => t('J@W tasks states'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Unique ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => t('State label'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => t('State description'),
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => FALSE,
+      ),
+
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['jaw_task_kinds'] = array(
+    'description' => t('J@W task kinds'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Unique task kind ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => t('J@W task kind label'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => t('Task kind description'),
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['jaw_tasks'] = array(
+    'description' => t('J@W tasks'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Unique task ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => t('The Unix timestamp when task created.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' =>
+        t('The Unix timestamp when task was recently changed.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'pid' => array(
+        'description' => t('Project {jaw_tasks}.id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,       // 0 - root, top level
+      ),
+      'tkid' => array(
+        'description' => t('{jaw_task_kinds}.id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'tsid' => array(
+        'description' => t('Task state {jaw_task_states}.id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'label' => array(
+        'description' => t('Task label'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'start_date_plan' => array(
+        'description' => t('The Unix timestamp when project must be started.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'finish_date_plan' => array(
+        'description' => t('The Unix timestamp when project must be finished.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'start_date' => array(
+        'description' => t('The Unix timestamp when project real started.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'finish_date' => array(
+        'description' => t('The Unix timestamp when project real finished.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'description' => array(
+        'description' => t('Task description'),
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => false,
+      ),
+      'options' => array(
+        'description' => t('Task options'),
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => FALSE,
+      ),
+    ),
+
+    'primary key' => array('id'),
+
+    'foreign keys' => array(
+      'parent_task' => array(
+        'table' => 'jaw_tasks',
+        'columns' => array('pid' => 'id',),
+      ),
+      'task_kind' => array(
+        'table' => 'jaw_task_kinds',
+        'columns' => array('tkid' => 'id',),
+      ),
+      'task_state' => array(
+        'table' => 'jaw_task_states',
+        'columns' => array('tsid' => 'id',),
+      ),
+    ),
+  );
+
+  $schema['jaw_task_customers'] = array(
+
+    'description' => t('Tasks customer(s) relations table.'),
+
+    'fields' => array(
+      'tid' => array(
+        'description' => t('J@W {jaw_tasks}.id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('J@W {jaw_users}.id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+
+    'primary key' => array('id'),
+    'foreign keys' => array(
+      'task' => array(
+        'table' => 'jaw_tasks',
+        'columns' => array(
+          'tid' => 'id',
+        ),
+      ),
+      'customer' => array(
+        'table' => 'jaw_users',
+        'columns' => array(
+          'uid' => 'id',
+        ),
+      ),
+    ),
+
+  );
+
+  $schema['jaw_task_executors'] = array(
+
+    'description' => t('Tasks executor(s) relations table.'),
+
+    'fields' => array(
+      'tid' => array(
+        'description' => t('J@W {jaw_tasks}.id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('J@W {jaw_users}.id'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+
+    'primary key' => array('id'),
+    'foreign keys' => array(
+      'task' => array(
+        'table' => 'jaw_tasks',
+        'columns' => array(
+          'tid' => 'id',
+        ),
+      ),
+      'executor' => array(
+        'table' => 'jaw_users',
+        'columns' => array(
+          'cid' => 'id',
+        ),
+      ),
+    ),
+
+  );
+
+  $schema['jaw_period'] = array(
+    'description' => t('Time segments, thats spent in work on task.'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Unique ID'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'tid' => array(
+        'description' => t('Task {jaw_tasks}.id'),
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => true,
+        ),
+      'eid' => array(
+        'description' => t('Executor {jaw_users}.id'),
+        'type' => 'int',
+        'unsigned' => true,
+        'not null' => true,
+        'default' => 0,
+      ),
+      'start' => array(
+        'description' => t('Start time (UNIX)'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => true,
+        'default' => 0,
+      ),
+      'finish' => array(
+        'description' => t('Finish time (UNIX)'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => true,
+        'default' => 0,
+      ),
+      'comment' => array(
+        'description' => t('Comment'),
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => false,
+      ),
+    ),
+    'primary key' => array('id'),
+
+    'foreign fields' => array(
+      'task' => array(
+        'table' => 'jaw_tasks',
+        'columns' => array('tid' => 'id'),
+      ),
+      'executor' => array(
+        'table' => 'jaw_users',
+        'columns' => array('eid' => 'id'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Fill tables with defaults
+ */
+function jaw_db_defaults() {
+
+  $defaults = array(
+    'jaw_task_kinds' => array(),
+    'jaw_task_states' => array(),
+  );
+
+  $now = time();
+
+  $defaults['jaw_task_kinds'][] = array('label'=>'Development');
+  $defaults['jaw_task_kinds'][] = array('label'=>'Project engineering');
+  $defaults['jaw_task_kinds'][] = array('label'=>'Reverse engineering');
+  $defaults['jaw_task_kinds'][] = array('label'=>'Design');
+  $defaults['jaw_task_kinds'][] = array('label'=>'Makeup');
+
+  $defaults['jaw_task_states'][] = array('label'=>'Undefined');
+  $defaults['jaw_task_states'][] = array('label'=>'Inactive');
+  $defaults['jaw_task_states'][] = array('label'=>'Active');
+  $defaults['jaw_task_states'][] = array('label'=>'Suspended');
+
+  foreach ($defaults as $table => $values) {
+    foreach ($values as $record) {
+      drupal_write_record($table, $record);
+    }
+  }
+
+}
+
+/**
+ * hook_install() implementation
+ */
+function jaw_install() {
+  drupal_install_schema('jaw');
+  jaw_db_defaults();
+}
+
+/**
+ * jook_uninstall() implementation
+ */
+function jaw_uninstall() {
+  drupal_uninstall_schema('jaw');
+}

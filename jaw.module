@@ -1,0 +1,93 @@
+<?php
+/**
+ * @file        jaw.module
+ * @description Joy At Work main module
+ *
+ * PHP Version  5.3
+ *
+ * @package Joy At Work
+ * @category
+ * @plugin URI
+ * @copyright   2013, Vadim Pshentsov. All Rights Reserved.
+ * @license     http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0
+ * @author      Vadim Pshentsov <pshentsoff@gmail.com>
+ * @created     14.09.13
+ */
+
+/**
+ * @param $op
+ * @param $entity
+ * @param null $account
+ * @param string $entity_type
+ * @return bool
+ *
+ * @todo carefully check access rights and permissions
+ */
+function jaw_access($op, $entity, $account = null, $entity_type = 'jaw_task') {
+
+  $access = user_access('administer site configuration');
+
+  return $access;
+}
+
+/**
+ * hook_entity_info() implementation
+ */
+function jaw_entity_info() {
+
+  $entities = array(
+
+    'jaw_task_kinds' => array(
+      'label' => t('J@W task kinds'),
+      'controller class' => 'DrupalDefaultEntityController',
+      'base table' => 'jaw_task_kinds',
+      'entity keys' => array(
+        'id' => 'id',
+        'label' => 'label',
+      ),
+      'access callback' => 'jaw_access',
+      'module' => 'jaw',
+    ),
+
+    'jaw_users' => array(
+      'label' => t('J@W user'),
+      'controller class' => 'JAWUserEntityController',
+      'base table' => 'jaw_users',
+      'entity keys' => array(
+        'id' => 'id',
+      ),
+      'fieldable' => true,
+      'access callback' => 'jaw_access',
+      'module' => 'jaw',
+    ),
+
+    'jaw_task' => array(
+      'label' => t('J@W task'),
+      'controller class' => 'JAWTaskEntityController',
+      'base table' => 'jaw_tasks',
+      'entity keys' => array(
+        'id' => 'id',
+        'label' => 'label',
+        ),
+      'fieldable' => true,
+      'access callback' => 'jaw_access',
+      'module' => 'jaw',
+      ),
+
+    'jaw_period' => array(
+      'label' => t('Task period'),
+      'controller class' => 'DrupalDefaultEntityController', //@todo period entity controller
+      'base table' => 'jaw_periods',
+      'entity keys' => array(
+        'id' => 'id',
+        'label' => 'label',
+      ),
+      'fieldable' => true,
+      'access callback' => 'jaw_access',
+      'module' => 'jaw',
+    ),
+
+  );
+
+  return $entities;
+}

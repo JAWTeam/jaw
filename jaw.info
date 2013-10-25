@@ -1,0 +1,10 @@
+name        = Joy@Work
+description = "Joy@Work main module"
+package     = Joy@Work
+core        = 7.x
+php         = 5.3
+version     = "7.x-0.1.1-dev"
+dependencies[]  = ce_userdata
+files[]     = jaw.install
+files[]     = jaw.module
+files[]     = inc/JAWTaskEntityController.inc
